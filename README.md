@@ -1,11 +1,5 @@
-# Parking-Finder
-* Backd (Node.js/Express/MongoDB) *
-Full REST API with authentication
-User management (register/login)
-Parking spot CRUD operations
-Booking system
-Location-based search
-JWT authentication
+# Park-Finder
+
 
 <img width="1346" height="400" width="200" alt="Screenshot 2025-08-09 215719-fotor-2025080922937" src="https://github.com/user-attachments/assets/63d1ab7f-8849-499b-8616-67783c9806af" />
 
@@ -13,6 +7,13 @@ JWT authentication
 
 <img width="1320" height="402" width="200" alt="Screenshot 2025-08-09 221457" src="https://github.com/user-attachments/assets/3166f7eb-a619-415f-8f10-7455ddadfe37" />
 
+* Backd (Node.js/Express/MongoDB) *
+Full REST API with authentication
+User management (register/login)
+Parking spot CRUD operations
+Booking system
+Location-based search
+JWT authentication
 
 * Frontend (React) * 
 
