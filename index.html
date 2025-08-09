@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkFinder - Local Parking Spot Finder</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .app {
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-button {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-button.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .nav-button.secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            min-width: 300px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-button {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .map-container {
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .parking-spots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .parking-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .parking-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .parking-card h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .parking-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .info-tag {
+            background: #f0f0f0;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .availability {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .availability-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .available { background: #4CAF50; }
+        .limited { background: #FF9800; }
+        .full { background: #F44336; }
+
+        .parking-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .action-button {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .book-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .info-button {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .modal-button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .modal-button.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .modal-button.secondary {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .floating-add-button {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .floating-add-button:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+            }
+            
+            .search-input {
+                min-width: auto;
+            }
+            
+            .parking-spots {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Mock API functions (replace with actual backend calls)
+        const api = {
+            searchParkingSpots: async (location, radius = 5) => {
+                // Mock data - replace with actual API call
+                return [
+                    {
+                        _id: '1',
+                        title: 'Downtown Mall Parking',
+                        description: 'Covered parking near shopping center',
+                        address: '123 Main St, Downtown',
+                        availableSpots: 5,
+                        totalSpots: 20,
+                        pricePerHour: 3.50,
+                        spotType: 'parking_lot',
+                        amenities: ['covered', 'security', 'ev_charging'],
+                        status: 'available',
+                        createdBy: { name: 'John Doe', phone: '+1234567890' }
+                    },
+                    {
+                        _id: '2',
+                        title: 'Street Parking - Oak Ave',
+                        description: 'Free street parking, 2-hour limit',
+                        address: 'Oak Avenue, City Center',
+                        availableSpots: 2,
+                        totalSpots: 8,
+                        pricePerHour: 0,
+                        spotType: 'street',
+                        amenities: [],
+                        status: 'available',
+                        createdBy: { name: 'Jane Smith', phone: '+1234567891' }
+                    },
+                    {
+                        _id: '3',
+                        title: 'Private Garage',
+                        description: 'Secure private garage space',
+                        address: '456 Elm St, Residential Area',
+                        availableSpots: 0,
+                        totalSpots: 1,
+                        pricePerHour: 2.00,
+                        spotType: 'private',
+                        amenities: ['security', 'covered'],
+                        status: 'full',
+                        createdBy: { name: 'Mike Johnson', phone: '+1234567892' }
+                    }
+                ];
+            },
+            
+            addParkingSpot: async (spotData) => {
+                // Mock success - replace with actual API call
+                return { ...spotData, _id: Date.now().toString() };
+            }
+        };
+
+        // Main App Component
+        function App() {
+            const [currentView, setCurrentView] = useState('search');
+            const [parkingSpots, setParkingSpots] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [searchLocation, setSearchLocation] = useState('');
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [showBookModal, setShowBookModal] = useState(false);
+            const [selectedSpot, setSelectedSpot] = useState(null);
+            const [userLocation, setUserLocation] = useState(null);
+
+            // Get user location on component mount
+            useEffect(() => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            setUserLocation({
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            });
+                        },
+                        (error) => console.log('Location access denied')
+                    );
+                }
+            }, []);
+
+            // Search for parking spots
+            const handleSearch = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    const spots = await api.searchParkingSpots(searchLocation);
+                    setParkingSpots(spots);
+                } catch (error) {
+                    console.error('Search error:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Load nearby spots automatically
+            useEffect(() => {
+                if (userLocation) {
+                    handleLoadNearbySpots();
+                }
+            }, [userLocation]);
+
+            const handleLoadNearbySpots = async () => {
+                if (!userLocation) return;
+                setLoading(true);
+                try {
+                    const spots = await api.searchParkingSpots('', 5);
+                    setParkingSpots(spots);
+                } catch (error) {
+                    console.error('Error loading nearby spots:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="app">
+                    <Navbar currentView={currentView} setCurrentView={setCurrentView} />
+                    
+                    {currentView === 'search' && (
+                        <SearchView 
+                            searchLocation={searchLocation}
+                            setSearchLocation={setSearchLocation}
+                            handleSearch={handleSearch}
+                            parkingSpots={parkingSpots}
+                            loading={loading}
+                            setShowBookModal={setShowBookModal}
+                            setSelectedSpot={setSelectedSpot}
+                        />
+                    )}
+                    
+                    <button 
+                        className="floating-add-button"
+                        onClick={() => setShowAddModal(true)}
+                        title="Add parking spot"
+                    >
+                        +
+                    </button>
+
+                    {showAddModal && (
+                        <AddParkingModal 
+                            onClose={() => setShowAddModal(false)}
+                            onAdd={(spotData) => {
+                                // Add to local state
+                                setParkingSpots(prev => [...prev, spotData]);
+                                setShowAddModal(false);
+                            }}
+                        />
+                    )}
+
+                    {showBookModal && selectedSpot && (
+                        <BookingModal 
+                            spot={selectedSpot}
+                            onClose={() => {
+                                setShowBookModal(false);
+                                setSelectedSpot(null);
+                            }}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Navbar Component
+        function Navbar({ currentView, setCurrentView }) {
+            return (
+                <nav className="navbar">
+                    <div className="logo">🅿️ ParkFinder</div>
+                    <div className="nav-buttons">
+                        <button 
+                            className={`nav-button ${currentView === 'search' ? 'primary' : 'secondary'}`}
+                            onClick={() => setCurrentView('search')}
+                        >
+                            Find Parking
+                        </button>
+                        <button className="nav-button secondary">
+                            My Bookings
+                        </button>
+                        <button className="nav-button secondary">
+                            My Spots
+                        </button>
+                        <button className="nav-button primary">
+                            Login
+                        </button>
+                    </div>
+                </nav>
+            );
+        }
+
+        // Search View Component
+        function SearchView({ 
+            searchLocation, 
+            setSearchLocation, 
+            handleSearch, 
+            parkingSpots, 
+            loading,
+            setShowBookModal,
+            setSelectedSpot 
+        }) {
+            return (
+                <div className="container">
+                    <div className="hero">
+                        <h1>Find Perfect Parking Spots</h1>
+                        <p>Discover available parking spaces shared by your local community</p>
+                    </div>
+
+                    <div className="search-section">
+                        <form onSubmit={handleSearch} className="search-form">
+                            <input
+                                type="text"
+                                placeholder="Enter location or address..."
+                                value={searchLocation}
+                                onChange={(e) => setSearchLocation(e.target.value)}
+                                className="search-input"
+                            />
+                            <button type="submit" className="search-button">
+                                🔍 Search Parking
+                            </button>
+                        </form>
+                        
+                        <div className="map-container">
+                            <div style={{
+                                height: '100%',
+                                background: 'linear-gradient(135deg, #e3f2fd, #f3e5f5)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#666',
+                                fontSize: '1.2rem'
+                            }}>
+                                🗺️ Interactive Map View (Google Maps Integration)
+                            </div>
+                        </div>
+                    </div>
+
+                    {loading && (
+                        <div className="loading">
+                            🔄 Finding parking spots near you...
+                        </div>
+                    )}
+
+                    <div className="parking-spots">
+                        {parkingSpots.map(spot => (
+                            <ParkingCard 
+                                key={spot._id} 
+                                spot={spot} 
+                                onBook={() => {
+                                    setSelectedSpot(spot);
+                                    setShowBookModal(true);
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Parking Card Component
+        function ParkingCard({ spot, onBook }) {
+            const getAvailabilityStatus = () => {
+                if (spot.availableSpots === 0) return { class: 'full', text: 'Full' };
+                if (spot.availableSpots <= 2) return { class: 'limited', text: 'Limited' };
+                return { class: 'available', text: 'Available' };
+            };
+
+            const availability = getAvailabilityStatus();
+
+            return (
+                <div className="parking-card">
+                    <h3>{spot.title}</h3>
+                    <p style={{ color: '#666', marginBottom: '1rem' }}>
+                        📍 {spot.address}
+                    </p>
+                    
+                    <div className="parking-info">
+                        <div className="info-tag">
+                            🚗 {spot.spotType.replace('_', ' ')}
+                        </div>
+                        <div className="info-tag">
+                            💰 ${spot.pricePerHour}/hour
+                        </div>
+                        {spot.amenities.map(amenity => (
+                            <div key={amenity} className="info-tag">
+                                {getAmenityIcon(amenity)} {amenity.replace('_', ' ')}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="availability">
+                        <div className={`availability-dot ${availability.class}`}></div>
+                        <span>{spot.availableSpots}/{spot.totalSpots} spots {availability.text.toLowerCase()}</span>
+                    </div>
+
+                    {spot.description && (
+                        <p style={{ color: '#666', fontSize: '0.9rem', margin: '0.5rem 0' }}>
+                            {spot.description}
+                        </p>
+                    )}
+
+                    <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: '1rem' }}>
+                        Shared by {spot.createdBy?.name} • {spot.createdBy?.phone}
+                    </div>
+
+                    <div className="parking-actions">
+                        <button 
+                            className="action-button book-button"
+                            onClick={onBook}
+                            disabled={spot.availableSpots === 0}
+                        >
+                            {spot.availableSpots === 0 ? 'Full' : 'Book Now'}
+                        </button>
+                        <button className="action-button info-button">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Add Parking Modal Component
+        function AddParkingModal({ onClose, onAdd }) {
+            const [formData, setFormData] = useState({
+                title: '',
+                description: '',
+                address: '',
+                totalSpots: 1,
+                availableSpots: 1,
+                pricePerHour: 0,
+                spotType: 'street',
+                amenities: []
+            });
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    const newSpot = await api.addParkingSpot({
+                        ...formData,
+                        latitude: 40.7128, // Mock coordinates - replace with actual geocoding
+                        longitude: -74.0060,
+                        createdBy: { name: 'Current User', phone: '+1234567890' }
+                    });
+                    onAdd(newSpot);
+                } catch (error) {
+                    console.error('Error adding spot:', error);
+                }
+            };
+
+            const handleAmenityChange = (amenity) => {
+                setFormData(prev => ({
+                    ...prev,
+                    amenities: prev.amenities.includes(amenity)
+                        ? prev.amenities.filter(a => a !== amenity)
+                        : [...prev.amenities, amenity]
+                }));
+            };
+
+            return (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>
+                            Add New Parking Spot
+                        </h2>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label className="form-label">Spot Title*</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                                    placeholder="e.g., Downtown Garage, My Driveway"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Address*</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({...formData, address: e.target.value})}
+                                    placeholder="Full address of parking spot"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Description</label>
+                                <textarea
+                                    className="form-textarea"
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                    placeholder="Additional details about the parking spot..."
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label className="form-label">Total Spots*</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={formData.totalSpots}
+                                        onChange={(e) => setFormData({...formData, totalSpots: parseInt(e.target.value)})}
+                                        min="1"
+                                        required
+                                    />
+                                </div>
+                                
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label className="form-label">Price per Hour ($)</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={formData.pricePerHour}
+                                        onChange={(e) => setFormData({...formData, pricePerHour: parseFloat(e.target.value)})}
+                                        min="0"
+                                        step="0.50"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Spot Type</label>
+                                <select
+                                    className="form-select"
+                                    value={formData.spotType}
+                                    onChange={(e) => setFormData({...formData, spotType: e.target.value})}
+                                >
+                                    <option value="street">Street Parking</option>
+                                    <option value="parking_lot">Parking Lot</option>
+                                    <option value="private">Private Space</option>
+                                    <option value="garage">Garage</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Amenities</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    {['covered', 'security', '24/7', 'ev_charging'].map(amenity => (
+                                        <label key={amenity} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.amenities.includes(amenity)}
+                                                onChange={() => handleAmenityChange(amenity)}
+                                            />
+                                            {amenity.replace('_', ' ')}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-actions">
+                                <button
+                                    type="button"
+                                    className="modal-button secondary"
+                                    onClick={onClose}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="modal-button primary"
+                                >
+                                    Add Parking Spot
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Booking Modal Component
+        function BookingModal({ spot, onClose }) {
+            const [bookingData, setBookingData] = useState({
+                startTime: '',
+                endTime: '',
+                duration: 1
+            });
+
+            const calculateCost = () => {
+                return (bookingData.duration * spot.pricePerHour).toFixed(2);
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                // Handle booking logic here
+                alert(`Booking confirmed for ${spot.title}!\nTotal cost: ${calculateCost()}`);
+                onClose();
+            };
+
+            return (
+                <div className="modal">
+                    <div className="modal-content">
+                        <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>
+                            Book Parking Spot
+                        </h2>
+                        
+                        <div style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                            <h3 style={{ marginBottom: '0.5rem' }}>{spot.title}</h3>
+                            <p style={{ color: '#666', marginBottom: '0.5rem' }}>📍 {spot.address}</p>
+                            <p style={{ color: '#666' }}>💰 ${spot.pricePerHour}/hour</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label className="form-label">Start Time*</label>
+                                <input
+                                    type="datetime-local"
+                                    className="form-input"
+                                    value={bookingData.startTime}
+                                    onChange={(e) => setBookingData({...bookingData, startTime: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Duration (hours)*</label>
+                                <select
+                                    className="form-select"
+                                    value={bookingData.duration}
+                                    onChange={(e) => setBookingData({...bookingData, duration: parseInt(e.target.value)})}
+                                >
+                                    {[1,2,3,4,5,6,8,12,24].map(hours => (
+                                        <option key={hours} value={hours}>{hours} hour{hours > 1 ? 's' : ''}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div style={{ 
+                                background: '#e8f5e8', 
+                                padding: '1rem', 
+                                borderRadius: '8px', 
+                                marginBottom: '1.5rem' 
+                            }}>
+                                <h4 style={{ marginBottom: '0.5rem' }}>Booking Summary</h4>
+                                <p>Duration: {bookingData.duration} hour{bookingData.duration > 1 ? 's' : ''}</p>
+                                <p>Rate: ${spot.pricePerHour}/hour</p>
+                                <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                    Total Cost: ${calculateCost()}
+                                </p>
+                            </div>
+
+                            <div className="form-actions">
+                                <button
+                                    type="button"
+                                    className="modal-button secondary"
+                                    onClick={onClose}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="modal-button primary"
+                                >
+                                    Confirm Booking
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Utility function for amenity icons
+        function getAmenityIcon(amenity) {
+            const icons = {
+                covered: '🏠',
+                security: '🔒',
+                '24/7': '🕰️',
+                ev_charging: '⚡'
+            };
+            return icons[amenity] || '✨';
+        }
+
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

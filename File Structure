@@ -1,0 +1,9 @@
+parking-finder/
+├── backend/
+│   ├── server.js
+│   ├── package.json
+│   ├── .env
+│   └── models/
+├── frontend/
+│   └── index.html (Complete React app)
+└── README.md
