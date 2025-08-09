@@ -7,7 +7,7 @@
 
 <img width="1320" height="402" width="200" alt="Screenshot 2025-08-09 221457" src="https://github.com/user-attachments/assets/3166f7eb-a619-415f-8f10-7455ddadfe37" />
 
-* Backd (Node.js/Express/MongoDB) *
+* Backend (Node.js/Express/MongoDB) *
 Full REST API with authentication
 User management (register/login)
 Parking spot CRUD operations
